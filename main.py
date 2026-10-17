@@ -48,7 +48,7 @@ def main() -> None:
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    api_key = os.environ.get("GEMINI_API_KEY")
+    api_key = st.secrets.get("GEMINI_API_KEY") or os.environ.get("GEMINI_API_KEY")
     if not api_key:
         st.error(
             "Gemini is not configured yet. Add GEMINI_API_KEY in the project's "
