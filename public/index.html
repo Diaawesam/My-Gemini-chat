@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Diaa AI - Ultimate Pro</title>
-    <!-- مكتبة التنسيق Markdown -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/atom-one-dark.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
@@ -31,7 +30,7 @@
         }
         body { font-family: Tahoma, sans-serif; background-color: var(--bg-main); color: var(--text-color); margin: 0; display: flex; height: 100vh; overflow: hidden; transition: 0.3s; }
         
-        sidebar { width: 280px; background: var(--bg-sidebar); border-left: 1px solid var(--border-color); display: flex; flex-direction: column; padding: 15px; box-sizing: border-box; }
+        sidebar { width: 260px; background: var(--bg-sidebar); border-left: 1px solid var(--border-color); display: flex; flex-direction: column; padding: 15px; box-sizing: border-box; }
         .new-chat-btn { background: #fff; color: #000; border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-bottom: 15px; }
         .history-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
         .history-item { padding: 10px; border-radius: 6px; cursor: pointer; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: rgba(0,0,0,0.05); }
@@ -51,9 +50,8 @@
         pre { background: #1e1e1e !important; color: #dcdcdc; padding: 12px; border-radius: 8px; overflow-x: auto; position: relative; margin-top: 8px; }
         code { font-family: Consolas, monospace; }
         .copy-code-btn { position: absolute; top: 6px; left: 6px; background: #333; color: #fff; border: none; padding: 3px 8px; font-size: 11px; border-radius: 4px; cursor: pointer; }
-        .copy-code-btn:hover { background: #555; }
 
-        .msg-tools { display: flex; gap: 10px; margin-top: 8px; font-size: 12px; opacity: 0.7; }
+        .msg-tools { display: flex; gap: 15px; margin-top: 10px; font-size: 12px; opacity: 0.8; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 5px; }
         .msg-tools span { cursor: pointer; }
         .msg-tools span:hover { opacity: 1; text-decoration: underline; }
 
@@ -66,9 +64,7 @@
         .input-row { display: flex; align-items: center; gap: 10px; }
         input[type="text"] { flex: 1; background: transparent; border: none; color: var(--text-color); font-size: 15px; outline: none; }
         .action-btn { cursor: pointer; font-size: 18px; background: none; border: none; padding: 4px; border-radius: 4px; }
-        .action-btn:hover { background: rgba(100,100,100,0.2); }
         .send-btn { background: #fff; color: #000; border: none; padding: 8px 16px; border-radius: 12px; font-weight: bold; cursor: pointer; }
-        .send-btn:hover { background: #ccc; }
 
         @media(max-width: 768px) { sidebar { display: none; } }
     </style>
@@ -130,8 +126,8 @@
             chatsHistory.forEach((chat, index) => {
                 const item = document.createElement('div');
                 item.className = 'history-item';
-                item.textContent = chat.title || `محادثة ${index + 1}`;
-                item.onclick = () => loadChat(index);
+                item.textContent = chat.title || ('محادثة ' + (index + 1));
+                item.onclick = function() { loadChat(index); };
                 list.appendChild(item);
             });
         }
@@ -154,7 +150,7 @@
                 const cls = h.role === 'user' ? 'user' : 'assistant';
                 const prefix = h.role === 'user' ? '<b>أنت:</b><br>' : '<b>Diaa AI:</b><br>';
                 const parsed = (typeof marked !== 'undefined' && marked.parse) ? marked.parse(h.content) : h.content;
-                chatContainer.innerHTML += `<div class="message ${cls}">${prefix}${parsed}</div>`;
+                chatContainer.innerHTML += '<div class="message ' + cls + '">' + prefix + parsed + '</div>';
             });
             if (window.hljs) hljs.highlightAll();
         }
@@ -173,6 +169,159 @@
                 document.getElementById('image-name').textContent = file.name;
                 document.getElementById('image-preview-container').style.display = 'flex';
             };
+            reader.readAsDataURL(file);
+        }
+
+        function removeImage() {
+            currentImageBase64 = null;
+            document.getElementById('image-input').value = '';
+            document.getElementById('image-preview-container').style.display = 'none';
+        }
+
+        function toggleSpeechRecognition() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                alert("متصفحك لا يدعم الإدخال الصوتي.");
+                return;
+            }
+            const recognition = new SpeechRecognition();
+            recognition.lang = 'ar-SA';
+            const micBtn = document.getElementById('mic-btn');
+            micBtn.style.color = '#ff6b6b';
+            
+            recognition.onresult = function(event) {
+                const text = event.results[0][0].transcript;
+                document.getElementById('user-input').value += ' ' + text;
+                micBtn.style.color = '';
+            };
+            recognition.onerror = function() { micBtn.style.color = ''; };
+            recognition.onend = function() { micBtn.style.color = ''; };
+            recognition.start();
+        }
+
+        function speakText(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'ar-SA';
+                window.speechSynthesis.speak(utterance);
+            } else {
+                alert("خاصية النطق غير متوفرة في متصفحك.");
+            }
+        }
+
+        function copyCode(btn) {
+            const pre = btn.parentElement;
+            const code = pre.querySelector('code').innerText;
+            navigator.clipboard.writeText(code);
+            btn.textContent = 'تم النسخ!';
+            setTimeout(function() { btn.textContent = 'نسخ'; }, 2000);
+        }
+
+        async function sendMessage(customText) {
+            const input = document.getElementById('user-input');
+            const text = customText || input.value.trim();
+            if (!text && !currentImageBase64) return;
+
+            const chatContainer = document.getElementById('chat-container');
+            
+            let userDisplayHtml = text;
+            if (currentImageBase64) {
+                userDisplayHtml += '<br><img src="' + currentImageBase64 + '" style="max-width:160px; border-radius:8px; margin-top:5px;">';
+            }
+
+            chatContainer.innerHTML += '<div class="message user"><b>أنت:</b><br>' + userDisplayHtml + '</div>';
+            
+            const payloadMessage = text;
+            const payloadImage = currentImageBase64;
+
+            if (!customText) {
+                input.value = '';
+                removeImage();
+            }
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+
+            const loadingId = 'loading-' + Date.now();
+            chatContainer.innerHTML += '<div id="' + loadingId + '" class="message assistant">جاري التفكير...</div>';
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+
+            try {
+                const res = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: payloadMessage, history: history, image: payloadImage, system_prompt: systemPrompt })
+                });
+
+                const data = await res.json();
+                
+                const loadingElem = document.getElementById(loadingId);
+                if (loadingElem) loadingElem.remove();
+
+                if (res.ok && data.response) {
+                    const parsed = (typeof marked !== 'undefined' && marked.parse) ? marked.parse(data.response) : data.response;
+                    const msgId = 'ai-msg-' + Date.now();
+                    
+                    chatContainer.innerHTML += '<div id="' + msgId + '" class="message assistant"><b>Diaa AI:</b><br>' + parsed + '<div class="msg-tools"><span onclick="speakText(\'' + data.response.replace(/['"\\]/g, '') + '\')">🔊 استماع</span><span onclick="regenerateLast()">🔄 إعادة توليد</span></div></div>';
+                    
+                    history.push({ role: 'user', content: payloadMessage });
+                    history.push({ role: 'assistant', content: data.response });
+                    
+                    if (window.hljs) hljs.highlightAll();
+                    addCodeCopyButtons(document.getElementById(msgId));
+                } else {
+                    const errDetail = data.detail || JSON.stringify(data);
+                    chatContainer.innerHTML += '<div class="message assistant" style="color: #ff6b6b;"><b>خطأ:</b> ' + errDetail + '</div>';
+                }
+            } catch (err) {
+                const loadingElem = document.getElementById(loadingId);
+                if (loadingElem) loadingElem.remove();
+                chatContainer.innerHTML += '<div class="message assistant" style="color: #ff6b6b;"><b>خطأ اتصالات:</b> ' + err.message + '</div>';
+            }
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function addCodeCopyButtons(container) {
+            if (!container) return;
+            container.querySelectorAll('pre').forEach(function(pre) {
+                if (!pre.querySelector('.copy-code-btn')) {
+                    const btn = document.createElement('button');
+                    btn.className = 'copy-code-btn';
+                    btn.textContent = 'نسخ';
+                    btn.onclick = function() { copyCode(btn); };
+                    pre.appendChild(btn);
+                }
+            });
+        }
+
+        function regenerateLast() {
+            if (history.length < 2) return;
+            history.pop();
+            const lastUserMsg = history.pop().content;
+            const chatContainer = document.getElementById('chat-container');
+            chatContainer.removeChild(chatContainer.lastChild);
+            chatContainer.removeChild(chatContainer.lastChild);
+            sendMessage(lastUserMsg);
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('light-mode');
+        }
+
+        function exportChat() {
+            const textContent = history.map(function(h) { return (h.role === 'user' ? 'أنت' : 'Diaa AI') + ': ' + h.content; }).join('\n\n');
+            const blob = new Blob([textContent], { type: 'text/markdown;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'diaa-ai-chat.md';
+            link.click();
+        }
+
+        function handleKeyPress(e) { if (e.key === 'Enter') sendMessage(); }
+        renderHistoryList();
+    </script>
+</body>
+</html>
+         };
             reader.readAsDataURL(file);
         }
 
