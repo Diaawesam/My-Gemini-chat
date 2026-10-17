@@ -25,7 +25,7 @@ class Message(BaseModel):
 @app.post("/api/chat")
 def chat(data: Message):
     if not client:
-        raise HTTPException(status_code=500, detail="API Key not found")
+        raise HTTPException(status_code=500, detail="API Key not found in environment variables")
     try:
         contents = []
         for h in data.history:
@@ -33,9 +33,8 @@ def chat(data: Message):
             contents.append({"role": role, "parts": [{"text": h.get("content", "")}]})
         contents.append({"role": "user", "parts": [{"text": data.message}]})
 
-        # استخدام نموذج gemini-2.5-flash الرسمي والأسرع
         response = client.models.generate_content(
-            model="gemini-2.5-flash",
+            model="gemini-1.5-flash",
             contents=contents
         )
         return {"response": response.text}
