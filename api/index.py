@@ -2,10 +2,9 @@ import os
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional
 from google import genai
 from mangum import Mangum
-import base64
 
 app = FastAPI()
 
@@ -27,32 +26,42 @@ class ChatMessage(BaseModel):
 def chat(data: ChatMessage):
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
-        raise HTTPException(status_code=500, detail="GEMINI_API_KEY not provided in Vercel settings")
+        raise HTTPException(status_code=500, detail="GEMINI_API_KEY غير موجود في إعدادات Vercel")
     
     try:
         client = genai.Client(api_key=api_key)
 
+        # تجهيز المحادثة السابقة بشكل محمي
         contents = []
         for h in data.history:
             role = "model" if h.get("role") == "assistant" else "user"
-            contents.append({"role": role, "parts": [{"text": h.get("content", "")}]})
+            contents.append({
+                "role": role,
+                "parts": [{"text": h.get("content", "")}]
+            })
         
-        user_parts = [{"text": data.message if data.message else "صف هذه الصورة"}]
-        
+        # إضافة الرسالة الحالية
+        user_parts = []
+        if data.message:
+            user_parts.append({"text": data.message})
+            
         if data.image:
-            if "," in data.image:
-                header, encoded = data.image.split(",", 1)
+            # التعامل مع الصورة كـ inline_data
+            img_data = data.image
+            mime_type = "image/jpeg"
+            if "," in img_data:
+                header, img_data = img_data.split(",", 1)
                 mime_type = header.split(";")[0].replace("data:", "")
-            else:
-                encoded = data.image
-                mime_type = "image/jpeg"
             
             user_parts.append({
                 "inline_data": {
                     "mime_type": mime_type,
-                    "data": encoded
+                    "data": img_data
                 }
             })
+
+        if not user_parts:
+            user_parts.append({"text": "مرحباً"})
 
         contents.append({"role": "user", "parts": user_parts})
 
@@ -62,6 +71,6 @@ def chat(data: ChatMessage):
         )
         return {"response": response.text}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"حدث خطأ أثناء المعالجة: {str(e)}")
 
 handler = Mangum(app)
