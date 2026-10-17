@@ -15,30 +15,34 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-api_key = os.environ.get("GEMINI_API_KEY")
-client = genai.Client(api_key=api_key) if api_key else None
-
 class Message(BaseModel):
     message: str
     history: list = []
 
 @app.post("/api/chat")
 def chat(data: Message):
-    if not client:
-        raise HTTPException(status_code=500, detail="API Key not found in environment variables")
+    # قراءة مفتاح الـ API داخل الـ Function لضمان الوصول إليه على Vercel
+    api_key = os.environ.get("GEMINI_API_KEY")
+    if not api_key:
+        raise HTTPException(status_code=500, detail="GEMINI_API_KEY is missing in Vercel settings")
+    
     try:
+        # إنشاء الـ Client بمفتاح الـ API المباشر
+        client = genai.Client(api_key=api_key)
+
         contents = []
         for h in data.history:
             role = "model" if h.get("role") == "assistant" else "user"
             contents.append({"role": role, "parts": [{"text": h.get("content", "")}]})
         contents.append({"role": "user", "parts": [{"text": data.message}]})
 
+        # استخدام الموديل الرسمي السريع gemini-2.5-flash
         response = client.models.generate_content(
-            model="gemini-1.5-flash",
+            model="gemini-2.5-flash",
             contents=contents
         )
         return {"response": response.text}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Gemini API Error: {str(e)}")
 
 handler = Mangum(app)
