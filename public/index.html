@@ -3,69 +3,214 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Diaa AI</title>
+    <title>Diaa AI - Pro</title>
+    <!-- مكتبة لعرض Markdown وتنسيق النصوص -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.js"></script>
     <style>
-        body { font-family: Tahoma, sans-serif; background-color: #131314; color: #e3e3e3; margin: 0; display: flex; flex-direction: column; height: 100vh; }
-        header { padding: 15px; text-align: center; border-bottom: 1px solid #333; background: #1e1e1f; }
-        h1 { margin: 0; font-size: 22px; color: #fff; }
-        p { margin: 5px 0 0; font-size: 13px; color: #aaa; }
-        #chat-container { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; max-width: 800px; width: 100%; margin: 0 auto; box-sizing: border-box; }
-        .message { padding: 12px 16px; border-radius: 12px; max-width: 75%; line-height: 1.5; word-wrap: break-word; }
-        .user { background: #2b3137; align-self: flex-start; color: #fff; }
-        .assistant { background: #1f2227; align-self: flex-end; border: 1px solid #333; color: #e3e3e3; }
-        #input-container { padding: 15px; background: #1e1e1f; border-top: 1px solid #333; display: flex; justify-content: center; }
-        .input-box { display: flex; max-width: 800px; width: 100%; background: #2b2d31; border-radius: 24px; padding: 8px 15px; }
-        input { flex: 1; background: transparent; border: none; color: #fff; font-size: 16px; outline: none; }
-        button { background: #fff; color: #000; border: none; padding: 8px 16px; border-radius: 16px; font-weight: bold; cursor: pointer; }
-        button:hover { background: #ccc; }
+        :root {
+            --bg-main: #131314;
+            --bg-sidebar: #1e1e1f;
+            --bg-chat: #1e1e1f;
+            --text-color: #e3e3e3;
+            --border-color: #333;
+            --user-bubble: #2b3137;
+            --ai-bubble: #1f2227;
+            --input-bg: #2b2d31;
+        }
+        .light-mode {
+            --bg-main: #f8f9fa;
+            --bg-sidebar: #f1f3f5;
+            --bg-chat: #ffffff;
+            --text-color: #212529;
+            --border-color: #dee2e6;
+            --user-bubble: #e9ecef;
+            --ai-bubble: #f8f9fa;
+            --input-bg: #ffffff;
+        }
+        body { font-family: Tahoma, sans-serif; background-color: var(--bg-main); color: var(--text-color); margin: 0; display: flex; height: 100vh; overflow: hidden; transition: 0.3s; }
+        
+        /* Sidebar */
+        sidebar { width: 260px; background: var(--bg-sidebar); border-left: 1px solid var(--border-color); display: flex; flex-direction: column; padding: 15px; box-sizing: border-box; }
+        .new-chat-btn { background: #fff; color: #000; border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-bottom: 15px; }
+        .history-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+        .history-item { padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: rgba(0,0,0,0.05); }
+        .history-item:hover { background: rgba(0,0,0,0.1); }
+
+        /* Main Chat Area */
+        .main-content { flex: 1; display: flex; flex-direction: column; height: 100vh; position: relative; }
+        header { padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); background: var(--bg-sidebar); }
+        h1 { margin: 0; font-size: 18px; }
+        .header-btns { display: flex; gap: 10px; }
+        .icon-btn { background: transparent; border: 1px solid var(--border-color); color: var(--text-color); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+
+        #chat-container { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; max-width: 850px; width: 100%; margin: 0 auto; box-sizing: border-box; }
+        .message { padding: 14px 18px; border-radius: 12px; max-width: 80%; line-height: 1.6; word-wrap: break-word; }
+        .user { background: var(--user-bubble); align-self: flex-start; }
+        .assistant { background: var(--ai-bubble); align-self: flex-end; border: 1px solid var(--border-color); }
+        
+        /* Code blocks styling */
+        pre { background: #000; color: #f8f9fa; padding: 10px; border-radius: 6px; overflow-x: auto; position: relative; }
+        code { font-family: monospace; }
+        .copy-btn { position: absolute; top: 5px; left: 5px; background: #495057; color: #fff; border: none; padding: 3px 8px; font-size: 11px; border-radius: 4px; cursor: pointer; }
+
+        /* Input Area */
+        #input-container { padding: 15px; background: var(--bg-sidebar); border-top: 1px solid var(--border-color); display: flex; justify-content: center; }
+        .input-wrapper { max-width: 850px; width: 100%; display: flex; flex-direction: column; background: var(--input-bg); border: 1px solid var(--border-color); border-radius: 16px; padding: 8px 12px; }
+        .input-row { display: flex; align-items: center; gap: 10px; }
+        input[type="text"] { flex: 1; background: transparent; border: none; color: var(--text-color); font-size: 15px; outline: none; }
+        
+        /* Image Preview */
+        #image-preview-container { display: none; align-items: center; gap: 10px; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid var(--border-color); }
+        #image-preview { width: 45px; height: 45px; object-fit: cover; border-radius: 6px; }
+        
+        .action-icon { cursor: pointer; font-size: 18px; color: #888; background: none; border: none; }
+        .action-icon:hover { color: var(--text-color); }
+        
+        send-btn { background: #fff; color: #000; border: none; padding: 8px 16px; border-radius: 12px; font-weight: bold; cursor: pointer; }
+        
+        @media(max-width: 768px) { sidebar { display: none; } }
     </style>
 </head>
 <body>
-    <header>
-        <h1>Diaa AI</h1>
-        <p>مساعد محادثة فائق السرعة مدعوم بواسطة ضياء وسام</p>
-    </header>
-    <div id="chat-container"></div>
-    <div id="input-container">
-        <div class="input-box">
-            <input type="text" id="user-input" placeholder="اكتب رسالتك هنا..." onkeypress="handleKeyPress(event)">
-            <button onclick="sendMessage()">إرسال</button>
+
+    <sidebar>
+        <button class="new-chat-btn" onclick="newChat()">+ محادثة جديدة</button>
+        <div class="history-list" id="history-list"></div>
+    </sidebar>
+
+    <div class="main-content">
+        <header>
+            <div>
+                <h1>Diaa AI - Pro</h1>
+            </div>
+            <div class="header-btns">
+                <button class="icon-btn" onclick="exportChat()">تصدير</button>
+                <button class="icon-btn" onclick="toggleTheme()">🌙/☀️</button>
+            </div>
+        </header>
+
+        <div id="chat-container">
+            <div class="message assistant">أهلاً بك يا ضياء! أنا مساعدك الذكي المحدث. كيف يمكنني مساعدتك اليوم؟</div>
+        </div>
+
+        <div id="input-container">
+            <div class="input-wrapper">
+                <div id="image-preview-container">
+                    <img id="image-preview" src="" alt="Preview">
+                    <span id="image-name" style="font-size: 12px; flex: 1; overflow: hidden; text-overflow: ellipsis;"></span>
+                    <button class="action-icon" onclick="removeImage()">✕</button>
+                </div>
+                <div class="input-row">
+                    <label class="action-icon" title="رفع صورة">
+                        📷 <input type="file" id="image-input" accept="image/*" style="display:none;" onchange="handleImage(event)">
+                    </label>
+                    <input type="text" id="user-input" placeholder="اكتب رسالتك أو اسأل عن الصورة..." onkeypress="handleKeyPress(event)">
+                    <button style="background:#fff; color:#000; border:none; padding:8px 16px; border-radius:12px; font-weight:bold; cursor:pointer;" onclick="sendMessage()">إرسال</button>
+                </div>
+            </div>
         </div>
     </div>
+
     <script>
         let history = [];
+        let currentImageBase64 = null;
+        let chatsHistory = JSON.parse(localStorage.getItem('chats')) || [];
+
+        function renderHistoryList() {
+            const list = document.getElementById('history-list');
+            list.innerHTML = '';
+            chatsHistory.forEach((chat, index) => {
+                const item = document.createElement('div');
+                item.className = 'history-item';
+                item.textContent = chat.title || `محادثة ${index + 1}`;
+                item.onclick = () => loadChat(index);
+                list.appendChild(item);
+            });
+        }
+
+        function newChat() {
+            if (history.length > 0) {
+                chatsHistory.unshift({ title: history[0].content.slice(0, 20) + '...', history: [...history] });
+                localStorage.setItem('chats', JSON.stringify(chatsHistory));
+            }
+            history = [];
+            document.getElementById('chat-container').innerHTML = `<div class="message assistant">تم بدء محادثة جديدة. تفضل!</div>`;
+            renderHistoryList();
+        }
+
+        function loadChat(index) {
+            history = [...chatsHistory[index].history];
+            const chatContainer = document.getElementById('chat-container');
+            chatContainer.innerHTML = '';
+            history.forEach(h => {
+                const cls = h.role === 'user' ? 'user' : 'assistant';
+                const prefix = h.role === 'user' ? '<b>أنت:</b><br>' : '<b>Diaa AI:</b><br>';
+                chatContainer.innerHTML += `<div class="message ${cls}">${prefix}${marked.parse(h.content)}</div>`;
+            });
+        }
+
+        function handleImage(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                currentImageBase64 = e.target.result;
+                document.getElementById('image-preview').src = currentImageBase64;
+                document.getElementById('image-name').textContent = file.name;
+                document.getElementById('image-preview-container').style.display = 'flex';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function removeImage() {
+            currentImageBase64 = null;
+            document.getElementById('image-input').value = '';
+            document.getElementById('image-preview-container').style.display = 'none';
+        }
+
         async function sendMessage() {
             const input = document.getElementById('user-input');
             const text = input.value.trim();
-            if (!text) return;
+            if (!text && !currentImageBase64) return;
 
             const chatContainer = document.getElementById('chat-container');
             
-            chatContainer.innerHTML += `<div class="message user"><b>أنت:</b><br>${text}</div>`;
+            let userDisplayHtml = text;
+            if (currentImageBase64) {
+                userDisplayHtml += `<br><img src="${currentImageBase64}" style="max-width:150px; border-radius:8px; margin-top:5px;">`;
+            }
+
+            chatContainer.innerHTML += `<div class="message user"><b>أنت:</b><br>${userDisplayHtml}</div>`;
+            
+            const payloadMessage = text;
+            const payloadImage = currentImageBase64;
+
             input.value = '';
+            removeImage();
             chatContainer.scrollTop = chatContainer.scrollHeight;
 
             const loadingId = 'loading-' + Date.now();
-            chatContainer.innerHTML += `<div id="${loadingId}" class="message assistant">جاري الكتابة...</div>`;
+            chatContainer.innerHTML += `<div id="${loadingId}" class="message assistant">جاري المعالجة...</div>`;
             chatContainer.scrollTop = chatContainer.scrollHeight;
 
             try {
                 const res = await fetch('/api/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: text, history: history })
+                    body: JSON.stringify({ message: payloadMessage, history: history, image: payloadImage })
                 });
                 const data = await res.json();
                 
                 document.getElementById(loadingId).remove();
 
                 if (res.ok && data.response) {
-                    chatContainer.innerHTML += `<div class="message assistant"><b>Diaa AI:</b><br>${data.response.replace(/\n/g, '<br>')}</div>`;
-                    history.push({ role: 'user', content: text });
+                    const parsedMarkdown = marked.parse(data.response);
+                    chatContainer.innerHTML += `<div class="message assistant"><b>Diaa AI:</b><br>${parsedMarkdown}</div>`;
+                    
+                    history.push({ role: 'user', content: payloadMessage });
                     history.push({ role: 'assistant', content: data.response });
                 } else {
-                    const errorMsg = data.detail || 'خطأ غير معروف من الخادم';
-                    chatContainer.innerHTML += `<div class="message assistant" style="color: #ff6b6b;"><b>خطأ:</b> ${errorMsg}</div>`;
+                    chatContainer.innerHTML += `<div class="message assistant" style="color: #ff6b6b;"><b>خطأ:</b> ${data.detail || 'خطأ غير معروف'}</div>`;
                 }
             } catch (err) {
                 document.getElementById(loadingId).remove();
@@ -73,9 +218,22 @@
             }
             chatContainer.scrollTop = chatContainer.scrollHeight;
         }
-        function handleKeyPress(e) {
-            if (e.key === 'Enter') sendMessage();
+
+        function toggleTheme() {
+            document.body.classList.toggle('light-mode');
         }
+
+        function exportChat() {
+            const textContent = history.map(h => `${h.role === 'user' ? 'أنت' : 'Diaa AI'}: ${h.content}`).join('\n\n');
+            const blob = new Blob([textContent], { type: 'text/markdown;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'chat-export.md';
+            link.click();
+        }
+
+        function handleKeyPress(e) { if (e.key === 'Enter') sendMessage(); }
+        renderHistoryList();
     </script>
 </body>
 </html>
