@@ -10,7 +10,7 @@ st.caption("A conversational assistant powered by Diaa Wesam.")
 api_key = st.secrets.get("GEMINI_API_KEY")
 
 if not api_key:
-    st.error("مفتاح GEMINI_API_KEY غير موجود في Streamlit Secrets. يرجى إضافته في Manage App > Secrets.")
+    st.error("مفتاح GEMINI_API_KEY غير موجود في Streamlit Secrets.")
     st.stop()
 
 # تهيئة العميل
@@ -27,18 +27,19 @@ for message in st.session_state.messages:
 
 # استقبال مدخلات المستخدم
 if prompt := st.chat_input("اكتب رسالتك هنا..."):
-    # إضافة رسالة المستخدم للسجل وعرضها
+    # إضافة ورسم رسالة المستخدم
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    # تجهيز السجل لإرساله للنموذج
+    # تجهيز آخر 6 رسائل فقط لسرعة معالجة قصوى
+    recent_messages = st.session_state.messages[-6:]
     contents = []
-    for msg in st.session_state.messages:
+    for msg in recent_messages:
         role = "model" if msg["role"] == "assistant" else "user"
         contents.append({"role": role, "parts": [{"text": msg["content"]}]})
 
-    # الحصول على الرد وعرضه بشكل سريع ولحظي (Streaming)
+    # الحصول على الرد بأسرع طريقة تدفق
     with st.chat_message("assistant"):
         try:
             response = client.models.generate_content_stream(
@@ -46,13 +47,8 @@ if prompt := st.chat_input("اكتب رسالتك هنا..."):
                 contents=contents
             )
             
-            # دالة لتسليم النصوص حرفاً بحرف للمشغل
-            def stream_parser():
-                for chunk in response:
-                    if chunk.text:
-                        yield chunk.text
-
-            full_response = st.write_stream(stream_parser())
+            # عرض النص فور وصوله بدون أي تأخير
+            full_response = st.write_stream(chunk.text for chunk in response if chunk.text)
             st.session_state.messages.append({"role": "assistant", "content": full_response})
             
         except Exception as e:
