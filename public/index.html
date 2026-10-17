@@ -40,7 +40,7 @@
             if (!text) return;
 
             const chatContainer = document.getElementById('chat-container');
-
+            
             chatContainer.innerHTML += `<div class="message user"><b>أنت:</b><br>${text}</div>`;
             input.value = '';
             chatContainer.scrollTop = chatContainer.scrollHeight;
@@ -56,19 +56,20 @@
                     body: JSON.stringify({ message: text, history: history })
                 });
                 const data = await res.json();
-
+                
                 document.getElementById(loadingId).remove();
 
-                if (data.response) {
+                if (res.ok && data.response) {
                     chatContainer.innerHTML += `<div class="message assistant"><b>Diaa AI:</b><br>${data.response.replace(/\n/g, '<br>')}</div>`;
                     history.push({ role: 'user', content: text });
                     history.push({ role: 'assistant', content: data.response });
                 } else {
-                    chatContainer.innerHTML += `<div class="message assistant" style="color: #ff6b6b;">حدث خطأ في الرد.</div>`;
+                    const errorMsg = data.detail || 'خطأ غير معروف من الخادم';
+                    chatContainer.innerHTML += `<div class="message assistant" style="color: #ff6b6b;"><b>خطأ:</b> ${errorMsg}</div>`;
                 }
             } catch (err) {
                 document.getElementById(loadingId).remove();
-                chatContainer.innerHTML += `<div class="message assistant" style="color: #ff6b6b;">خطأ في الاتصال بالخادم.</div>`;
+                chatContainer.innerHTML += `<div class="message assistant" style="color: #ff6b6b;">خطأ في الاتصال بالشبكة.</div>`;
             }
             chatContainer.scrollTop = chatContainer.scrollHeight;
         }
