@@ -20,14 +20,13 @@ class Message(BaseModel):
     history: list = []
 
 @app.post("/api/chat")
+@app.post("/chat")
 def chat(data: Message):
-    # قراءة مفتاح الـ API داخل الـ Function لضمان الوصول إليه على Vercel
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
-        raise HTTPException(status_code=500, detail="GEMINI_API_KEY is missing in Vercel settings")
+        raise HTTPException(status_code=500, detail="GEMINI_API_KEY not provided in Vercel settings")
     
     try:
-        # إنشاء الـ Client بمفتاح الـ API المباشر
         client = genai.Client(api_key=api_key)
 
         contents = []
@@ -36,13 +35,12 @@ def chat(data: Message):
             contents.append({"role": role, "parts": [{"text": h.get("content", "")}]})
         contents.append({"role": "user", "parts": [{"text": data.message}]})
 
-        # استخدام الموديل الرسمي السريع gemini-2.5-flash
         response = client.models.generate_content(
             model="gemini-2.5-flash",
             contents=contents
         )
         return {"response": response.text}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Gemini API Error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 handler = Mangum(app)
