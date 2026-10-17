@@ -1,7 +1,6 @@
 import os
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from typing import Optional, List
 from google import genai
@@ -72,22 +71,13 @@ def chat(data: ChatMessage):
         if data.system_prompt:
             config = types.GenerateContentConfig(system_instruction=data.system_prompt)
 
-        # تفعيل التدفق المباشر للردود
-        response = client.models.generate_content_stream(
+        response = client.models.generate_content(
             model="gemini-3.8-flash",
             contents=contents,
             config=config
         )
 
-        def generate():
-            try:
-                for chunk in response:
-                    if hasattr(chunk, 'text') and chunk.text:
-                        yield chunk.text
-            except Exception as e:
-                yield f"\n[خطأ أثناء التوليد: {str(e)}]"
-
-        return StreamingResponse(generate(), media_type="text/plain")
+        return {"response": response.text}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
