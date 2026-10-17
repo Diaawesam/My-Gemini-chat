@@ -30,14 +30,17 @@
         }
         body { font-family: Tahoma, sans-serif; background-color: var(--bg-main); color: var(--text-color); margin: 0; display: flex; height: 100vh; overflow: hidden; transition: 0.3s; }
         
-        sidebar { width: 260px; background: var(--bg-sidebar); border-left: 1px solid var(--border-color); display: flex; flex-direction: column; padding: 15px; box-sizing: border-box; }
+        /* Sidebar */
+        sidebar { width: 280px; background: var(--bg-sidebar); border-left: 1px solid var(--border-color); display: flex; flex-direction: column; padding: 15px; box-sizing: border-box; transition: transform 0.3s ease; z-index: 100; }
         .new-chat-btn { background: #fff; color: #000; border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-bottom: 15px; }
         .history-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
         .history-item { padding: 10px; border-radius: 6px; cursor: pointer; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: rgba(0,0,0,0.05); }
         .history-item:hover { background: rgba(100,100,100,0.1); }
 
+        /* Main Content */
         .main-content { flex: 1; display: flex; flex-direction: column; height: 100vh; position: relative; }
         header { padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); background: var(--bg-header); }
+        .header-title-area { display: flex; align-items: center; gap: 10px; }
         h1 { margin: 0; font-size: 18px; color: var(--text-color); }
         .header-controls { display: flex; gap: 8px; align-items: center; }
         select, .icon-btn { background: var(--input-bg); color: var(--text-color); border: 1px solid var(--border-color); padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 13px; outline: none; }
@@ -47,12 +50,17 @@
         .user { background: var(--user-bubble); align-self: flex-start; }
         .assistant { background: var(--ai-bubble); align-self: flex-end; border: 1px solid var(--border-color); }
         
+        .msg-header { display: flex; align-items: center; gap: 8px; font-weight: bold; margin-bottom: 6px; }
+        .avatar { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; }
+        .avatar-ai { background: #4dabf7; color: #fff; }
+        .avatar-user { background: #6c757d; color: #fff; }
+
         pre { background: #1e1e1e !important; color: #dcdcdc; padding: 12px; border-radius: 8px; overflow-x: auto; position: relative; margin-top: 8px; }
         code { font-family: Consolas, monospace; }
         .copy-code-btn { position: absolute; top: 6px; left: 6px; background: #333; color: #fff; border: none; padding: 3px 8px; font-size: 11px; border-radius: 4px; cursor: pointer; }
 
-        .msg-tools { display: flex; gap: 15px; margin-top: 10px; font-size: 12px; opacity: 0.8; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 5px; }
-        .msg-tools span { cursor: pointer; }
+        .msg-tools { display: flex; gap: 15px; margin-top: 10px; font-size: 12px; opacity: 0.8; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 6px; }
+        .msg-tools span { cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
         .msg-tools span:hover { opacity: 1; text-decoration: underline; }
 
         #input-container { padding: 15px; background: var(--bg-header); border-top: 1px solid var(--border-color); display: flex; justify-content: center; }
@@ -66,19 +74,26 @@
         .action-btn { cursor: pointer; font-size: 18px; background: none; border: none; padding: 4px; border-radius: 4px; }
         .send-btn { background: #fff; color: #000; border: none; padding: 8px 16px; border-radius: 12px; font-weight: bold; cursor: pointer; }
 
-        @media(max-width: 768px) { sidebar { display: none; } }
+        /* Responsive Sidebar toggle for Mobile */
+        @media(max-width: 768px) {
+            sidebar { position: fixed; top: 0; right: 0; bottom: 0; transform: translateX(100%); }
+            sidebar.open { transform: translateX(0); }
+        }
     </style>
 </head>
 <body>
 
-    <sidebar>
+    <sidebar id="sidebar">
         <button class="new-chat-btn" id="new-chat-btn">+ محادثة جديدة</button>
         <div class="history-list" id="history-list"></div>
     </sidebar>
 
     <div class="main-content">
         <header>
-            <h1>Diaa AI - Pro</h1>
+            <div class="header-title-area">
+                <button class="icon-btn" id="toggle-sidebar-btn" title="القائمة الجانبية">☰</button>
+                <h1>Diaa AI - Pro</h1>
+            </div>
             <div class="header-controls">
                 <select id="role-select">
                     <option value="">🤖 مساعد عام ذكي</option>
@@ -92,7 +107,13 @@
         </header>
 
         <div id="chat-container">
-            <div class="message assistant">أهلاً بك يا ضياء! أنا مساعدك الذكي المحدث بكافة الميزات. كيف يمكنني إفادتك اليوم؟</div>
+            <div class="message assistant">
+                <div class="msg-header">
+                    <div class="avatar avatar-ai">🤖</div>
+                    <span>Diaa AI</span>
+                </div>
+                أهلاً بك يا ضياء! أنا مساعدك الذكي المحدث بكافة الميزات. كيف يمكنني إفادتك اليوم؟
+            </div>
         </div>
 
         <div id="input-container">
@@ -127,7 +148,10 @@
                 const item = document.createElement('div');
                 item.className = 'history-item';
                 item.textContent = chat.title || ('محادثة ' + (index + 1));
-                item.onclick = function() { loadChat(index); };
+                item.onclick = function() { 
+                    loadChat(index); 
+                    document.getElementById('sidebar').classList.remove('open');
+                };
                 list.appendChild(item);
             });
         }
@@ -138,8 +162,16 @@
                 localStorage.setItem('diaa_chats', JSON.stringify(chatsHistory));
             }
             history = [];
-            document.getElementById('chat-container').innerHTML = '<div class="message assistant">تم بدء محادثة جديدة. تفضل!</div>';
+            document.getElementById('chat-container').innerHTML = `
+                <div class="message assistant">
+                    <div class="msg-header">
+                        <div class="avatar avatar-ai">🤖</div>
+                        <span>Diaa AI</span>
+                    </div>
+                    تم بدء محادثة جديدة. تفضل!
+                </div>`;
             renderHistoryList();
+            document.getElementById('sidebar').classList.remove('open');
         }
 
         function loadChat(index) {
@@ -147,21 +179,20 @@
             const chatContainer = document.getElementById('chat-container');
             chatContainer.innerHTML = '';
             history.forEach(function(h) {
-                const cls = h.role === 'user' ? 'user' : 'assistant';
-                const prefix = h.role === 'user' ? '<b>أنت:</b><br>' : '<b>Diaa AI:</b><br>';
+                const isUser = h.role === 'user';
+                const cls = isUser ? 'user' : 'assistant';
+                const avatarTag = isUser ? '<div class="avatar avatar-user">👤</div><span>أنت</span>' : '<div class="avatar avatar-ai">🤖</div><span>Diaa AI</span>';
                 const parsed = (typeof marked !== 'undefined' && marked.parse) ? marked.parse(h.content) : h.content;
                 
                 const msgDiv = document.createElement('div');
                 msgDiv.className = 'message ' + cls;
-                msgDiv.innerHTML = prefix + parsed;
+                msgDiv.innerHTML = '<div class="msg-header">' + avatarTag + '</div>' + parsed;
                 chatContainer.appendChild(msgDiv);
             });
             if (window.hljs) hljs.highlightAll();
         }
 
-        document.getElementById('role-select').onchange = function(e) {
-            systemPrompt = e.target.value;
-        };
+        document.getElementById('role-select').onchange = function(e) { systemPrompt = e.target.value; };
 
         document.getElementById('image-input').onchange = function(event) {
             const file = event.target.files[0];
@@ -231,7 +262,7 @@
             
             const userDiv = document.createElement('div');
             userDiv.className = 'message user';
-            let userHtml = '<b>أنت:</b><br>' + text;
+            let userHtml = '<div class="msg-header"><div class="avatar avatar-user">👤</div><span>أنت</span></div>' + text;
             if (currentImageBase64) {
                 userHtml += '<br><img src="' + currentImageBase64 + '" style="max-width:160px; border-radius:8px; margin-top:5px;">';
             }
@@ -253,7 +284,7 @@
             const loadingDiv = document.createElement('div');
             loadingDiv.id = loadingId;
             loadingDiv.className = 'message assistant';
-            loadingDiv.textContent = 'جاري التفكير...';
+            loadingDiv.innerHTML = '<div class="msg-header"><div class="avatar avatar-ai">🤖</div><span>Diaa AI</span></div>جاري التفكير...';
             chatContainer.appendChild(loadingDiv);
             chatContainer.scrollTop = chatContainer.scrollHeight;
 
@@ -276,19 +307,19 @@
                     msgDiv.className = 'message assistant';
                     
                     const textNode = document.createElement('div');
-                    textNode.innerHTML = '<b>Diaa AI:</b><br>' + parsed;
+                    textNode.innerHTML = '<div class="msg-header"><div class="avatar avatar-ai">🤖</div><span>Diaa AI</span></div>' + parsed;
                     msgDiv.appendChild(textNode);
 
                     const toolsDiv = document.createElement('div');
                     toolsDiv.className = 'msg-tools';
                     
                     const speakSpan = document.createElement('span');
-                    speakSpan.textContent = '🔊 استماع';
+                    speakSpan.innerHTML = '🔊 استماع';
                     speakSpan.onclick = function() { speakText(data.response); };
                     toolsDiv.appendChild(speakSpan);
 
                     const regenSpan = document.createElement('span');
-                    regenSpan.textContent = '🔄 إعادة توليد';
+                    regenSpan.innerHTML = '🔄 إعادة توليد';
                     regenSpan.onclick = function() { regenerateLast(); };
                     toolsDiv.appendChild(regenSpan);
 
@@ -343,11 +374,15 @@
             sendMessage(lastUserMsg);
         }
 
+        document.getElementById('toggle-sidebar-btn').onclick = function() {
+            document.getElementById('sidebar').classList.toggle('open');
+        };
+
         document.getElementById('theme-btn').onclick = function() {
             document.body.classList.toggle('light-mode');
         };
 
-        document.getElementById('export-btn').onclick = function() {
+                document.getElementById('export-btn').onclick = function() {
             const textContent = history.map(function(h) { return (h.role === 'user' ? 'أنت' : 'Diaa AI') + ': ' + h.content; }).join('\n\n');
             const blob = new Blob([textContent], { type: 'text/markdown;charset=utf-8;' });
             const link = document.createElement('a');
