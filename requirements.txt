@@ -1,2 +1,5 @@
-streamlit
+fastapi
+uvicorn
+mangum
 google-genai
+pydantic
