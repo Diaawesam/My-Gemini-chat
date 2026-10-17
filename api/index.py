@@ -2,7 +2,7 @@ import os
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 from google import genai
 from mangum import Mangum
 
@@ -18,7 +18,7 @@ app.add_middleware(
 
 class ChatMessage(BaseModel):
     message: str
-    history: list = []
+    history: Optional[List[dict]] = []
     image: Optional[str] = None
 
 @app.post("/api/chat")
@@ -26,27 +26,27 @@ class ChatMessage(BaseModel):
 def chat(data: ChatMessage):
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
-        raise HTTPException(status_code=500, detail="GEMINI_API_KEY غير موجود في إعدادات Vercel")
+        raise HTTPException(status_code=500, detail="GEMINI_API_KEY not provided in Vercel settings")
     
     try:
         client = genai.Client(api_key=api_key)
 
-        # تجهيز المحادثة السابقة بشكل محمي
         contents = []
-        for h in data.history:
-            role = "model" if h.get("role") == "assistant" else "user"
-            contents.append({
-                "role": role,
-                "parts": [{"text": h.get("content", "")}]
-            })
+        if data.history:
+            for h in data.history:
+                role = "model" if h.get("role") == "assistant" else "user"
+                content_text = h.get("content", "")
+                if content_text:
+                    contents.append({
+                        "role": role,
+                        "parts": [{"text": str(content_text)}]
+                    })
         
-        # إضافة الرسالة الحالية
         user_parts = []
         if data.message:
-            user_parts.append({"text": data.message})
+            user_parts.append({"text": str(data.message)})
             
         if data.image:
-            # التعامل مع الصورة كـ inline_data
             img_data = data.image
             mime_type = "image/jpeg"
             if "," in img_data:
@@ -71,6 +71,6 @@ def chat(data: ChatMessage):
         )
         return {"response": response.text}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"حدث خطأ أثناء المعالجة: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 handler = Mangum(app)
