@@ -23,7 +23,7 @@ def stream_gemini_response(
 
 def main() -> None:
     st.set_page_config(page_title="Diaa AI", page_icon="✦")
-    st.title("Gemini Chat")
+    st.title("Diaa AI")
     st.caption("A conversational assistant powered by Diaa Wesam.")
 
     if "messages" not in st.session_state:
@@ -41,7 +41,7 @@ def main() -> None:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
-    prompt = st.chat_input("Message Gemini")
+    prompt = st.chat_input("Message")
     if not prompt:
         return
 
