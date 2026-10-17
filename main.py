@@ -22,9 +22,9 @@ def stream_gemini_response(
 
 
 def main() -> None:
-    st.set_page_config(page_title="Gemini Chat", page_icon="✦")
+    st.set_page_config(page_title="Diaa AI", page_icon="✦")
     st.title("Gemini Chat")
-    st.caption("A conversational assistant powered by Google Gemini.")
+    st.caption("A conversational assistant powered by Diaa Wesam.")
 
     if "messages" not in st.session_state:
         st.session_state.messages = []
