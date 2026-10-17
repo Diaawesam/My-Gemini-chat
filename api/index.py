@@ -33,8 +33,9 @@ def chat(data: Message):
             contents.append({"role": role, "parts": [{"text": h.get("content", "")}]})
         contents.append({"role": "user", "parts": [{"text": data.message}]})
 
+        # استخدام نموذج gemini-2.5-flash الرسمي والأسرع
         response = client.models.generate_content(
-            model="gemini-3.8-flash",
+            model="gemini-2.5-flash",
             contents=contents
         )
         return {"response": response.text}
