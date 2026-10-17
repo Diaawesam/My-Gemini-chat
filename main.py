@@ -38,15 +38,22 @@ if prompt := st.chat_input("اكتب رسالتك هنا..."):
         role = "model" if msg["role"] == "assistant" else "user"
         contents.append({"role": role, "parts": [{"text": msg["content"]}]})
 
-    # الحصول على الرد وعرضه
+    # الحصول على الرد وعرضه بشكل سريع ولحظي (Streaming)
     with st.chat_message("assistant"):
         try:
-            response = client.models.generate_content(
+            response = client.models.generate_content_stream(
                 model="gemini-3.8-flash",
                 contents=contents
             )
-            st.markdown(response.text)
-            st.session_state.messages.append({"role": "assistant", "content": response.text})
+            
+            # دالة لتسليم النصوص حرفاً بحرف للمشغل
+            def stream_parser():
+                for chunk in response:
+                    if chunk.text:
+                        yield chunk.text
+
+            full_response = st.write_stream(stream_parser())
+            st.session_state.messages.append({"role": "assistant", "content": full_response})
+            
         except Exception as e:
             st.error(f"حدث خطأ أثناء الاتصال: {e}")
-            
