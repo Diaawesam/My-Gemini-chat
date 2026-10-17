@@ -35,8 +35,9 @@ def chat(data: Message):
             contents.append({"role": role, "parts": [{"text": h.get("content", "")}]})
         contents.append({"role": "user", "parts": [{"text": data.message}]})
 
+        # استخدام النموذج الموصى به رسمياً من رسالة الخطأ
         response = client.models.generate_content(
-            model="gemini-2.5-flash",
+            model="gemini-3.8-flash",
             contents=contents
         )
         return {"response": response.text}
